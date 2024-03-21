@@ -1,0 +1,41 @@
+management:
+  endpoint:
+    metrics:
+      enabled:
+  endpoints:
+    web:
+      exposure:
+        include: health,prometheus
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+server:
+  port: 8080
+
+spring:
+  application:
+    name: kafka-producer
+
+  cloud:
+    function:
+      definition: catTransaction
+    stream:
+      bindings:
+        catTransaction-out-0:
+          destination: cat-transaction
+      kafka:
+        binder:
+          brokers: localhost:9092
+          required-acks: 1
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    password: KAFKA_HIGHLOAD
+    username: KAFKA_HIGHLOAD
+    url: jdbc:postgresql://host.docker.internal:5432/KAFKA_HIGHLOAD
+
+  liquibase:
+    enabled: true
+    change-log: classpath:/db/changelog/changelog-master.xml
+

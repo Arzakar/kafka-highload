@@ -1,0 +1,75 @@
+services:
+  kafka_highload_postgres:
+    image: postgres:latest
+    container_name: kafka_highload_postgres
+    ports:
+      - 5432:5432
+    networks: [ kafka_highload_network ]
+    environment:
+      - POSTGRES_DB=KAFKA_HIGHLOAD
+      - POSTGRES_PASSWORD=KAFKA_HIGHLOAD
+      - POSTGRES_USER=KAFKA_HIGHLOAD
+
+  kafka_highload_zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    container_name: kafka_highload_zookeeper
+    hostname: zookeeper
+    ports:
+      - 2181:2181
+    networks: [ kafka_highload_network ]
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka_highload_kafka:
+    image: confluentinc/cp-kafka:latest
+    container_name: kafka_highload_kafka
+    hostname: kafka
+    ports:
+      - 9092:9092
+      - 29092:29092
+    networks: [ kafka_highload_network ]
+    depends_on:
+      - kafka_highload_zookeeper
+    environment:
+      KAFKA_ADVERTISED_LISTENERS: INTERNAL://kafka:29092, EXTERNAL://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: INTERNAL
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: INTERNAL:PLAINTEXT, EXTERNAL:PLAINTEXT
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+
+  kafka_highload_kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka_highload_kafka-ui
+    ports:
+      - 8086:8080
+    networks: [ kafka_highload_network ]
+    depends_on:
+      - kafka_highload_kafka
+    environment:
+      - KAFKA_CLUSTERS_0_NAME=local
+      - KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS=kafka:29092
+
+  kafka_highload_prometheus:
+    image: prom/prometheus:latest
+    container_name: kafka_highload_prometheus
+    ports:
+      - 9090:9090
+    networks: [ kafka_highload_network ]
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  kafka_highload_grafana:
+    image: grafana/grafana:latest
+    container_name: kafka_highload_grafana
+    ports:
+      - 3000:3000
+    networks: [ kafka_highload_network ]
+    environment:
+      - GF_AUTH_ANONYMOUS_ENABLED=true
+
+networks:
+  kafka_highload_network:
+    name: kafka_highload_network
+
+
